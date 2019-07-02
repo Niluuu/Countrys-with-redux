@@ -1,95 +1,65 @@
 import React, { Component } from 'react'
 import './App.css';
 import { connect } from "react-redux";
-import { fetchProducts } from "./productActions";
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
-import SearchIcon from '@material-ui/icons/Search';
-import InputBase from '@material-ui/core/InputBase';
-import IconButton from '@material-ui/core/IconButton';
-import Grid from '@material-ui/core/Grid';
-
+import { fetchProducts, filter, search_text } from "./productActions";
+import Input from './Input'
+import  CountryTable  from './CountryTable';
+import LinearProgress from '@material-ui/core/LinearProgress';
 
 export class App extends Component {
-  state = {
-    filtered: [],
-    value: ""
-  }
+
   componentDidMount() {
     this.props.dispatch(fetchProducts());
   }
 
-  handleChage = (e) => {
-    const { value } = this.state.value
-    this.setState({ value: e.target.value })
-    console.log("val", value)
+  handleClick = (e) => {
+    e.preventDefault()
+    if (this.props.text.length < 1) {
+      alert("write something")
+    }else{
+      this.props.dispatch(filter())  
+    }
+  }
+
+  handleChange = (event) => {
+    this.props.dispatch(search_text(event.target.value))
   }
 
    render() {
-    const { error, loading, products } = this.props;
-    // console.log("pr",products)
+    const { error, loading, products, text, filtered } = this.props;
+    console.log("filtered",filtered)
 
     if (error) {
       return <div>Error! {error.message}</div>;
     }
 
     if (loading) {
-      return <div>Loading...</div>;
+      return <LinearProgress />;
     }
 
     return (
       <div>
-        <Grid
-          container
-          direction="row"
-          justify="center"
-          alignItems="flex-start"
-        >
-          <InputBase
-            placeholder="Search Country by name"
-            onChange={this.handleChage}
-            value={this.state.value}
+        <Input 
+          text={text} 
+          handleClick={this.handleClick}
+          handleChange={this.handleChange}
           />
-          <IconButton aria-label="Search" >
-            <SearchIcon />
-          </IconButton>
-        </Grid>
-        <Grid
-          container
-          direction="row-reverse"
-          justify="center"
-          alignItems="flex-start"
-         >
-        <Paper>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name of country</TableCell>
-                <TableCell align="right">Capitals</TableCell>
-                <TableCell align="right">Algha code</TableCell>
-                <TableCell align="right">Flags</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              { products.map(country => (
-                  <TableRow key={country.area} >
-                    <TableCell component="th" scope="row">{country.name}</TableCell>
-                    <TableCell align="right">{country.capital}</TableCell>
-                    <TableCell align="right">{country.alpha3Code}</TableCell>
-                    <TableCell style={{backgroundImage: `url(${country.flag})`, backgroundSize: "cover", height: "30px", width: "50px" }} align="right"></TableCell>
-                  </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </Paper>
-        </Grid>
+          {
+            filtered === null || !filtered || filtered.length === 0 || text === "" ? (
+              <div>
+                {/* all */}
+                <CountryTable products={products} />
+              </div>
+              ) : (
+              <div>
+                {/* filtered */}
+                <CountryTable products={filtered} />
+              </div>
+          )}
+
       </div>
-             
     );
+   
   }
 }
 
@@ -97,9 +67,11 @@ export class App extends Component {
 const mapStateToProps = state => ({
   products: state.products.items,
   loading: state.products.loading,
-  error: state.products.error
+  error: state.products.error,
+  text: state.products.text,
+  filtered: state.products.filtered
 });
 
 
-export default connect(mapStateToProps) (App)
+export default connect(mapStateToProps)(App)
 
